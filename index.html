@@ -116,7 +116,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
     <div class="readout">
       <span id="statShape"></span>
       <span id="statProgress"></span>
-      <span class="crank">Drag clockwise around the paper to turn the wheel by hand.</span>
+      <span class="crank">Tap the paper to pause. Drag clockwise around it to turn the wheel by hand.</span>
     </div>
   </section>
 
@@ -820,9 +820,24 @@ $('showGears').addEventListener('change', e => { state.showGears = e.target.chec
 $('showPreview').addEventListener('change', e => { state.preview = e.target.checked; });
 $('cyclePens').addEventListener('change', e => { state.cyclePens = e.target.checked; });
 
+// bring the paper back into view when drawing starts from further down the panel
+function showPaper() {
+  const r = sheet.getBoundingClientRect();
+  if (r.top >= 0 && r.bottom <= window.innerHeight) return;
+  const from = window.scrollY;
+  const to = Math.max(0, from + r.top - Math.max(8, (window.innerHeight - r.height) / 2));
+  if (reduceMotion) { window.scrollTo(0, to); return; }
+  const t0 = performance.now(), dur = 450;
+  const step = now => {
+    const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+    window.scrollTo(0, from + (to - from) * e);
+    if (k < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
 $('drawBtn').addEventListener('click', () => {
   if (running) running = false;
-  else { if (!cur) startLayer(); running = true; }
+  else { if (!cur) startLayer(); running = true; showPaper(); }
   syncUI();
 });
 $('finishBtn').addEventListener('click', () => { finishAll(); syncUI(); });
@@ -832,7 +847,7 @@ $('undoBtn').addEventListener('click', () => {
 $('clearBtn').addEventListener('click', () => {
   running = false; cur = null; queue = []; layers = []; redrawPaper(); syncUI();
 });
-$('rosetteBtn').addEventListener('click', () => { drawRosette(); syncUI(); });
+$('rosetteBtn').addEventListener('click', () => { drawRosette(); syncUI(); showPaper(); });
 $('fitBtn').addEventListener('click', () => {
   const g = gcd(state.R, state.r);
   const prev = lastMatch();
@@ -865,6 +880,7 @@ $('surpriseBtn').addEventListener('click', () => {
   startLayer(); running = true;
   if (reduceMotion) finishAll();
   syncUI();
+  showPaper();
 });
 
 // ---------- start: a shared drawing, or one already on the paper ----------
