@@ -3,22 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
-</head>
-<body>
 <title>Artograph</title>
+<meta name="description" content="A Spirograph in your browser. Pick a ring and a wheel, put the pen in a hole, and let it roll. Free, no sign-up.">
+<link rel="canonical" href="https://art.sala.company/">
+<meta property="og:title" content="Artograph">
+<meta property="og:description" content="A Spirograph in your browser: real gears, gel pens, rosettes, PNG and SVG export.">
+<meta property="og:image" content="https://go.sala.company/img/artograph.jpg">
+<meta property="og:url" content="https://art.sala.company/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Monoton&family=IM+Fell+English&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Monoton&family=IM+Fell+English&family=Instrument+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: square sheet of paper on the left, a toolbox of gears, pens and motion controls on the right; stacks on phones. */
+/* Layout: square sheet of paper that stays in view, beside (or above, on phones) a toolbox of numbered steps. */
 :root{
   --bg:#e7ebf2; --panel:#f8f9fc; --fg:#1a1e2c; --muted:#5b6278; --line:#d2d8e4; --chip:#eef1f7;
-  --accent:#2445d0; --accent-ink:#ffffff; --shadow:0 1px 2px rgba(20,30,60,.08),0 12px 32px rgba(20,30,60,.12);
+  --accent:#2445d0; --accent-ink:#ffffff; --gold:#a9791f; --shadow:0 1px 2px rgba(20,30,60,.08),0 12px 32px rgba(20,30,60,.12);
   --display:'Monoton','Impact',system-ui,sans-serif;
   --body:'Instrument Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
-  --mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
-  --numeral:'Monoton','Impact',system-ui,sans-serif; --step:'IM Fell English',Georgia,serif; --gold:#a9791f;
+  --mono:ui-monospace,'SF Mono','Cascadia Mono',Consolas,monospace;
+  --numeral:'Monoton','Impact',system-ui,sans-serif; --step:'IM Fell English',Georgia,serif;
+  color-scheme:light;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0e1017; --panel:#161922; --fg:#e6e8f1; --muted:#959bb0; --line:#292e3c; --chip:#1e222e;
@@ -26,37 +30,51 @@
 :root[data-theme="dark"]{
   --bg:#0e1017; --panel:#161922; --fg:#e6e8f1; --muted:#959bb0; --line:#292e3c; --chip:#1e222e;
   --accent:#8499ff; --accent-ink:#0e1017; --gold:#d6aa52; --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.45); color-scheme:dark}
-body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14px;line-height:1.45}
-.app{max-width:1220px;margin:0 auto;padding-inline:16px;padding-block:18px 32px;display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:22px;align-items:start}
-@media (max-width:860px){.app{grid-template-columns:minmax(0,1fr)}}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14px;line-height:1.45}
+[hidden]{display:none!important}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.app{max-width:1220px;margin:0 auto;padding-inline:16px;padding-block:18px 32px;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:22px;align-items:start}
 header{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 18px}
 h1{font-family:var(--display);font-weight:400;font-size:clamp(30px,5vw,46px);letter-spacing:.02em;margin:0;line-height:1;color:var(--accent)}
 .site{font-family:var(--mono);font-size:clamp(13px,1.6vw,16px);font-weight:500;letter-spacing:.02em;color:var(--muted);vertical-align:middle;margin-left:.4em}
 .tag{color:var(--muted);margin:0;font-size:15px}
-.stage{display:flex;flex-direction:column;gap:10px;min-width:0}
-.sheet{position:relative;width:100%;max-width:min(100%,max(320px,calc(100vh - 170px)));aspect-ratio:1;margin-inline:auto;border-radius:4px;box-shadow:var(--shadow);overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+.stage{display:flex;flex-direction:column;gap:10px;min-width:0;position:sticky;top:calc(14px + env(safe-area-inset-top,0px))}
+.sheet{position:relative;width:100%;max-width:min(100%,max(320px,calc(100vh - 110px)));aspect-ratio:1;margin-inline:auto;border-radius:4px;box-shadow:var(--shadow);overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
 .sheet canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 #overlay{cursor:grab}
 #overlay.cranking{cursor:grabbing}
-.readout{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 16px;font-family:var(--mono);font-size:12.5px;color:var(--muted);width:100%;max-width:min(100%,max(320px,calc(100vh - 170px)));margin-inline:auto;font-variant-numeric:tabular-nums}
+#overlay:focus-visible{outline:3px solid var(--accent);outline-offset:-3px}
+.readout{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 16px;font-family:var(--mono);font-size:12.5px;color:var(--muted);width:100%;max-width:min(100%,max(320px,calc(100vh - 110px)));margin-inline:auto;font-variant-numeric:tabular-nums}
 .readout b{color:var(--fg);font-weight:500}
 .readout .crank{flex-basis:100%;font-family:var(--body);font-size:13px}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:0;min-width:0}
+.tabs{display:none}
 .order-note{margin:0 0 6px;font-size:13px;color:var(--muted);font-style:italic}
+.recipes{display:flex;flex-direction:column;gap:8px;padding-block:4px 16px;border-bottom:1px solid var(--line)}
+.recipes h2{font-family:var(--step);font-weight:400;font-size:20px;margin:0;line-height:1.15}
+.recipe-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:6px}
+.recipe{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 4px 6px;border:1px solid var(--line);border-radius:8px;background:var(--chip);color:var(--fg);cursor:pointer;font:inherit;font-size:12px;font-weight:500;min-width:0}
+.recipe canvas{width:100%;aspect-ratio:1;display:block;border-radius:5px}
+.recipe:hover{border-color:var(--accent)}
 .step{display:grid;grid-template-columns:46px minmax(0,1fr);column-gap:10px;row-gap:10px;padding-block:16px;border-top:1px solid var(--line)}
-.order-note+.step{border-top:0}
+.recipes+.step{border-top:0}
 .step-num{grid-row:1/span 2;font-family:var(--numeral);font-weight:400;font-size:36px;line-height:.8;color:var(--gold);text-align:center;font-variant-numeric:lining-nums}
 .step h2{font-family:var(--step);font-weight:400;font-size:20px;line-height:1.15;margin:0;color:var(--fg);text-wrap:balance}
 .step-body{grid-column:2;display:flex;flex-direction:column;gap:8px;min-width:0}
 .panel>.hint{padding-top:12px;border-top:1px solid var(--line)}
-.group{display:flex;flex-direction:column;gap:8px}
 .label{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.label output{font-family:var(--mono);font-weight:500;letter-spacing:0;text-transform:none;color:var(--fg);font-size:12.5px}
+.label output{font-family:var(--mono);font-weight:500;letter-spacing:0;text-transform:none;color:var(--fg);font-size:12.5px;text-align:right}
 .chips{display:flex;flex-wrap:wrap;gap:5px}
 .chip{font-family:var(--mono);font-size:12.5px;min-width:38px;padding:5px 7px;border-radius:6px;border:1px solid var(--line);background:var(--chip);color:var(--fg);cursor:pointer;font-variant-numeric:tabular-nums}
 .chip:hover:not(:disabled){border-color:var(--accent)}
 .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.chip:disabled{opacity:.35;cursor:not-allowed;text-decoration:line-through}
+.rings{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:5px}
+.ringbtn{display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 4px;border:1px solid var(--line);border-radius:7px;background:var(--chip);color:var(--fg);cursor:pointer;font:inherit}
+.ringbtn .teeth{font-family:var(--mono);font-size:13px;font-weight:500}
+.ringbtn .pts{font-size:10.5px;color:var(--muted);white-space:nowrap}
+.ringbtn:hover{border-color:var(--accent)}
+.ringbtn[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:var(--panel)}
 .seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:7px;overflow:hidden}
 .seg button{font:inherit;font-weight:500;padding:7px 8px;border:0;background:var(--chip);color:var(--fg);cursor:pointer}
 .seg button+button{border-left:1px solid var(--line)}
@@ -68,26 +86,27 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:0}
 .custom{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)}
 .custom input{width:34px;height:28px;padding:0;border:1px solid var(--line);border-radius:6px;background:none;cursor:pointer}
 .check{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13.5px}
-.check input{accent-color:var(--accent);width:16px;height:16px}
+.check input{accent-color:var(--accent);width:16px;height:16px;flex:none}
 .actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}
 .btn{font:inherit;font-weight:500;padding:9px 10px;border-radius:7px;border:1px solid var(--line);background:var(--chip);color:var(--fg);cursor:pointer}
-.btn:hover{border-color:var(--accent)}
+.btn:hover:not(:disabled){border-color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
 .btn.primary{grid-column:1/-1;background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-size:15px;padding:11px}
 .btn.wide{grid-column:1/-1}
-.rosette{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
-.rosette .btn{flex:1 1 auto}
+.btn.small{padding:5px 10px;font-size:12.5px;flex:none}
 .share{display:flex;gap:6px}
 .share input{flex:1;min-width:0;font-family:var(--mono);font-size:12px;padding:7px 8px;border:1px solid var(--line);border-radius:7px;background:var(--chip);color:var(--fg)}
 button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .hint{font-size:12.5px;color:var(--muted);margin:0}
+kbd{font-family:var(--mono);font-size:11.5px;padding:0 4px;border:1px solid var(--line);border-radius:4px;background:var(--chip);color:var(--fg)}
 .legend{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);margin:0}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--gold);flex:none}
 .wheels{display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:5px}
 .wheel{position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;padding:4px 3px 5px;border:1px solid var(--line);border-radius:7px;background:var(--chip);color:var(--fg);cursor:pointer;font:inherit;min-width:0}
-.wheel canvas{width:100%;aspect-ratio:1;display:block}
+.wheel canvas{width:100%;aspect-ratio:1;display:block;border-radius:4px}
 .wheel .teeth{font-family:var(--mono);font-size:12px;font-weight:500;line-height:1.2}
 .wheel .pts{font-size:10.5px;color:var(--muted);line-height:1.1;white-space:nowrap}
-.wheel.good::after{content:"";position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--gold)}
+.wheel.good::after{content:"";position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 2px var(--chip)}
 .wheel.dense .pts{font-style:italic}
 .wheel:hover:not(:disabled){border-color:var(--accent)}
 .wheel[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:var(--panel)}
@@ -97,33 +116,72 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .sample{height:26px;border-radius:6px;border:1px solid var(--line);display:flex;align-items:center;padding-inline:12px}
 .sample-line{width:100%;border-radius:99px}
 .suggest{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.btn.small{padding:5px 10px;font-size:12.5px;flex:none}
-.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:999px;font-weight:500;box-shadow:var(--shadow);z-index:10}
-</style>
+.layers{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;min-height:52px}
+.layers:empty::before{content:"Nothing drawn yet.";font-size:12.5px;color:var(--muted);align-self:center}
+.layer{flex:none;width:48px;height:48px;padding:0;border:1px solid var(--line);border-radius:6px;overflow:hidden;cursor:pointer;background:var(--chip)}
+.layer canvas{width:100%;height:100%;display:block}
+.layer.off canvas{opacity:.25}
+.layer[aria-pressed="true"]{outline:2px solid var(--accent);outline-offset:1px}
+.layer-tools{display:flex;flex-wrap:wrap;gap:6px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:999px;font-weight:500;box-shadow:var(--shadow);z-index:10;max-width:calc(100% - 32px);text-align:center}
 
+@media (max-width:860px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .stage{position:static}
+  .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:-6px -6px 10px;padding:4px;background:var(--chip);border-radius:8px}
+  .tabs button{font:inherit;font-weight:600;font-size:13px;padding:8px 4px;border:0;border-radius:6px;background:none;color:var(--muted);cursor:pointer}
+  .tabs button[aria-selected="true"]{background:var(--panel);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+  .panel[data-tab="gears"] [data-tab]:not([data-tab="gears"]),
+  .panel[data-tab="pen"] [data-tab]:not([data-tab="pen"]),
+  .panel[data-tab="draw"] [data-tab]:not([data-tab="draw"]),
+  .panel[data-tab="keep"] [data-tab]:not([data-tab="keep"]){display:none}
+}
+@media (max-width:860px) and (orientation:portrait){
+  .stage{position:sticky;top:0;z-index:5;background:var(--bg);margin-inline:-16px;padding:8px 16px 6px;gap:6px}
+  .sheet,.readout{max-width:min(100%,46vh)}
+  .readout .crank{display:none}
+}
+@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
 <div class="app">
   <header>
     <h1>Artograph <span class="site">art.sala.company</span></h1>
     <p class="tag">Pick a ring and a wheel, put the pen in a hole, and let it roll.</p>
   </header>
 
-  <section class="stage">
+  <section class="stage" aria-label="Paper">
     <div class="sheet" id="sheet">
-      <canvas id="paper" aria-label="Artograph drawing"></canvas>
+      <canvas id="paper" role="img" aria-label="Artograph drawing"></canvas>
       <canvas id="ghost" aria-hidden="true"></canvas>
-      <canvas id="overlay" aria-label="Drag clockwise around the paper to turn the wheel"></canvas>
+      <canvas id="overlay" tabindex="0" aria-label="Paper. Hold the right arrow key to turn the wheel, or drag clockwise around it."></canvas>
     </div>
     <div class="readout">
       <span id="statShape"></span>
       <span id="statProgress"></span>
       <span class="crank">Tap the paper to pause. Drag clockwise around it to turn the wheel by hand.</span>
     </div>
+    <p class="sr-only" id="srSummary" aria-live="polite"></p>
   </section>
 
-  <aside class="panel">
-    <p class="order-note">The steps are numbered to make a first drawing easy. You don't have to follow them in order: come back to any step at any time.</p>
+  <aside class="panel" id="panel" data-tab="gears">
+    <div class="tabs" role="tablist" aria-label="Controls">
+      <button role="tab" id="tab-gears" data-go="gears">Gears</button>
+      <button role="tab" id="tab-pen" data-go="pen">Pen</button>
+      <button role="tab" id="tab-draw" data-go="draw">Draw</button>
+      <button role="tab" id="tab-keep" data-go="keep">Keep</button>
+    </div>
 
-    <section class="step">
+    <p class="order-note" data-tab="gears">The steps are numbered to make a first drawing easy. You don't have to follow them in order: come back to any step at any time.</p>
+
+    <section class="recipes" data-tab="gears">
+      <h2>Quick start</h2>
+      <p class="hint">One tap draws a finished design on blank paper. Its settings stay, so you can change them and draw more on top.</p>
+      <div class="recipe-grid" id="recipes"></div>
+    </section>
+
+    <section class="step" data-tab="gears">
       <span class="step-num">1</span>
       <h2>Start with blank paper</h2>
       <div class="step-body">
@@ -135,7 +193,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
       </div>
     </section>
 
-    <section class="step">
+    <section class="step" data-tab="gears">
       <span class="step-num">2</span>
       <h2>Choose how the wheel rolls</h2>
       <div class="step-body">
@@ -146,31 +204,31 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
       </div>
     </section>
 
-    <section class="step">
+    <section class="step" data-tab="gears">
       <span class="step-num">3</span>
       <h2 id="ringLabel">Pick a ring</h2>
       <div class="step-body">
-        <div class="label"><span>Teeth</span></div>
-        <div class="chips" id="ringChips"></div>
+        <div class="rings" id="ringChips"></div>
+        <p class="hint">Under each one: how many wheels make a good match with it.</p>
       </div>
     </section>
 
-    <section class="step">
+    <section class="step" data-tab="gears">
       <span class="step-num">4</span>
       <h2>Pick a wheel</h2>
       <div class="step-body">
         <p class="legend"><span class="dot"></span> Good match with this ring</p>
         <div class="wheels" id="wheelChips"></div>
-        <p class="hint">Each preview shows the pattern that wheel makes with your ring and pen hole.</p>
+        <p class="hint">Each preview shows the pattern that wheel makes with your ring, pen hole and pen.</p>
       </div>
     </section>
 
-    <section class="step">
+    <section class="step" data-tab="gears">
       <span class="step-num">5</span>
       <h2>Put the pen in a hole</h2>
       <div class="step-body">
         <div class="label"><label for="hole">Pen hole</label><output id="holeOut"></output></div>
-        <input type="range" id="hole" min="10" max="95" step="1">
+        <input type="range" id="hole" min="1" max="8" step="1">
         <div class="scale" id="holeScale"><span>Gentle waves</span><span>Rounded petals</span><span>Sharp points</span></div>
         <div class="label"><label for="tooth">Start at tooth</label><output id="toothOut"></output></div>
         <input type="range" id="tooth" min="0" max="149" step="0.5" list="toothTicks">
@@ -180,7 +238,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
       </div>
     </section>
 
-    <section class="step">
+    <section class="step" data-tab="pen">
       <span class="step-num">6</span>
       <h2>Choose a pen</h2>
       <div class="step-body">
@@ -193,26 +251,37 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
       </div>
     </section>
 
-    <section class="step">
+    <section class="step" data-tab="draw">
       <span class="step-num">7</span>
       <h2>Draw</h2>
       <div class="step-body">
         <div class="actions">
           <button class="btn primary" id="drawBtn">Draw</button>
           <button class="btn" id="finishBtn">Finish instantly</button>
+          <button class="btn" id="surpriseBtn">Surprise me</button>
           <button class="btn" id="undoBtn">Undo layer</button>
-          <button class="btn wide" id="surpriseBtn">Surprise me</button>
+          <button class="btn" id="redoBtn">Redo layer</button>
         </div>
-        <p class="hint">Or drag clockwise around the paper to turn the wheel by hand.</p>
+        <p class="hint">Or drag clockwise around the paper to turn the wheel by hand. Tap the paper to pause.</p>
         <div class="label"><label for="speed">Speed</label><output id="speedOut"></output></div>
         <input type="range" id="speed" min="1" max="10" step="1">
         <p class="hint" id="timeHint"></p>
         <label class="check" for="showGears"><input type="checkbox" id="showGears" checked> Show the gears</label>
         <label class="check" for="showPreview"><input type="checkbox" id="showPreview" checked> Preview the pattern</label>
+        <label class="check" for="clicks"><input type="checkbox" id="clicks"> Gear clicks (sound)</label>
+        <label class="check" for="wobble"><input type="checkbox" id="wobble"> Real toy wobble: a slightly shaky hand and the odd slipped tooth</label>
+        <div class="label"><span>Layers</span><output id="layerCount"></output></div>
+        <div class="layers" id="layers"></div>
+        <div class="layer-tools" id="layerTools" hidden>
+          <button class="btn small" id="layerHide">Hide</button>
+          <button class="btn small" id="layerRecolor">Use current pen</button>
+          <button class="btn small" id="layerDelete">Delete</button>
+        </div>
+        <p class="hint">Keys: <kbd>Space</kbd> draw or pause · <kbd>Z</kbd> undo · <kbd>Shift</kbd>+<kbd>Z</kbd> redo · <kbd>←</kbd> <kbd>→</kbd> change wheel. With the paper selected, hold <kbd>→</kbd> to turn the wheel.</p>
       </div>
     </section>
 
-    <section class="step">
+    <section class="step" data-tab="draw">
       <span class="step-num">8</span>
       <h2>Add a rosette</h2>
       <div class="step-body">
@@ -224,22 +293,24 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
       </div>
     </section>
 
-    <section class="step">
+    <section class="step" data-tab="keep">
       <span class="step-num">9</span>
       <h2>Keep it</h2>
       <div class="step-body">
         <div class="actions">
           <button class="btn" id="pngBtn">Save PNG</button>
           <button class="btn" id="svgBtn">Save SVG</button>
-          <button class="btn wide" id="shareBtn">Copy share link</button>
+          <button class="btn" id="copyImgBtn">Copy image</button>
+          <button class="btn" id="shareBtn">Copy share link</button>
         </div>
+        <label class="check" for="transparent"><input type="checkbox" id="transparent"> Transparent background (PNG, SVG and copied images)</label>
         <div class="share" id="shareRow" hidden>
           <input id="shareField" readonly aria-label="Share link">
         </div>
       </div>
     </section>
 
-    <p class="hint">Changing the pen mid-drawing switches pens. Changing a gear, hole or start tooth lifts the wheel, so the next drawing starts a new layer on top.</p>
+    <p class="hint" data-tab="draw">Changing the pen mid-drawing switches pens. Changing a gear, hole or start tooth lifts the wheel, so the next drawing starts a new layer on top.</p>
   </aside>
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
@@ -260,9 +331,29 @@ const PENS = [
   ['Gold gel', '#d9b45a'], ['White gel', '#f4f4ee']
 ];
 const PAPER = { white: '#fdfdfb', black: '#0c0c10' };
+const pen = name => PENS.find(p => p[0] === name)[1];
+
+// One-tap designs. hole is a hole number on that wheel; copies > 1 makes a rosette.
+const RECIPES = [
+  { name: 'Star', paper: 'white', layers: [
+    { mode: 'in', R: 105, r: 42, hole: 9, tooth: 0, color: pen('Cobalt'), width: 1.75, copies: 3 } ] },
+  { name: 'Daisy', paper: 'white', layers: [
+    { mode: 'in', R: 105, r: 30, hole: 2, tooth: 0, color: pen('Leaf'), width: 1.5, copies: 1 },
+    { mode: 'in', R: 105, r: 63, hole: 7, tooth: 0, color: pen('Magenta'), width: 1.25, copies: 4 } ] },
+  { name: 'Lace', paper: 'white', layers: [
+    { mode: 'in', R: 150, r: 63, hole: 11, tooth: 0, color: pen('Teal'), width: 0.75, copies: 1 },
+    { mode: 'in', R: 150, r: 45, hole: 5, tooth: 7, color: pen('Violet'), width: 1.25, copies: 1 } ] },
+  { name: 'Galaxy', paper: 'black', layers: [
+    { mode: 'in', R: 144, r: 40, hole: 7, tooth: 0, color: pen('Cobalt'), width: 1, copies: 8, cycle: true } ] },
+  { name: 'Halo', paper: 'black', layers: [
+    { mode: 'out', R: 48, r: 30, hole: 5, tooth: 0, color: pen('Gold gel'), width: 1.25, copies: 4 } ] },
+  { name: 'Orbit', paper: 'white', layers: [
+    { mode: 'in', R: 150, r: 84, hole: 13, tooth: 0, color: pen('Magenta'), width: 0.75, copies: 1 },
+    { mode: 'in', R: 150, r: 30, hole: 6, tooth: 0, color: pen('Ink'), width: 1.5, copies: 1 } ] }
+];
 
 const $ = id => document.getElementById(id);
-const sheet = $('sheet'), paper = $('paper'), ghost = $('ghost'), over = $('overlay');
+const sheet = $('sheet'), paper = $('paper'), ghost = $('ghost'), over = $('overlay'), panel = $('panel');
 const pctx = paper.getContext('2d'), gctx = ghost.getContext('2d'), octx = over.getContext('2d');
 
 const root = document.documentElement;
@@ -270,54 +361,97 @@ const prefersDark = root.dataset.theme === 'dark' ||
   (root.dataset.theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+// ---------- gear maths ----------
+const gcd = (a, b) => { while (b) [a, b] = [b, a % b]; return a; };
+const holeCount = r => Math.max(5, Math.round(r / 5));
+const holeFrac = (r, i) => 0.12 + 0.8 * (i - 1) / (holeCount(r) - 1);
+const nearestHole = (r, f) => Math.min(holeCount(r), Math.max(1, Math.round((f - 0.12) / 0.8 * (holeCount(r) - 1)) + 1));
+const snapHole = (r, f) => holeFrac(r, nearestHole(r, f));
+const fitsFor = (mode, R, r) => mode === 'in' ? r < R : R + 2 * r <= LIMIT;
+function rating(R, r) {
+  const g = gcd(R, r), points = R / g, trips = r / g;
+  const kind = points <= 4 ? 'simple' : (points > 30 || trips > 14) ? 'dense' : points <= 24 ? 'good' : 'busy';
+  return { points, trips, kind };
+}
+function suggestWidth(R, r) {
+  const { points, trips } = rating(R, r);
+  const busy = Math.max(points, trips * 2.5);
+  return busy <= 8 ? 2.5 : busy <= 16 ? 1.75 : busy <= 30 ? 1.25 : busy <= 50 ? 1 : 0.75;
+}
+const HOLE_ZONES = ['Gentle waves', 'Rounded petals', 'Sharp points'];
+const holeZone = h => h < 0.4 ? 0 : h < 0.75 ? 1 : 2;
+
 const state = {
-  mode: 'in', R: 105, r: 40, hole: 0.9, tooth: 0,
+  mode: 'in', R: 105, r: 40, hole: snapHole(40, 0.9), tooth: 0,
   color: '#f2603f', width: 1.5, speed: 6, showGears: true, preview: true,
-  copies: 6, cyclePens: false,
-  paper: prefersDark ? 'black' : 'white'
+  copies: 6, cyclePens: false, clicks: false, wobble: false, transparent: false,
+  paper: prefersDark ? 'black' : 'white', tab: 'gears'
 };
-let layers = [];   // {mode,R,r,hole,alpha,T,t,segs:[{t0,t1,color,width}]}
+let layers = [];   // {mode,R,r,hole,alpha,T,t,hidden,wob,segs:[{t0,t1,color,width}]}
 let cur = null;    // layer being drawn (always the last in layers)
 let running = false;
-let queue = [];    // rosette copies still to draw: {alpha,color}
+let queue = [];    // layers still to draw (rosettes, recipes): full layer settings
+let redoStack = [];
+let selLayer = null;
+let version = 0;   // bumps whenever the list of layers changes
 let dpr = 1, S = 1, C = 0;
+const bump = () => { version++; };
 
-const gcd = (a, b) => { while (b) [a, b] = [b, a % b]; return a; };
 const ringList = () => state.mode === 'in' ? RINGS : CENTERS;
-const wheelOk = r => state.mode === 'in' ? r < state.R : state.R + 2 * r <= LIMIT;
+const wheelOk = r => fitsFor(state.mode, state.R, r);
 const visiblePens = () => PENS.filter(([, hex]) =>
   !(state.paper === 'black' && hex === '#1d1f2b') && !(state.paper === 'white' && hex === '#f4f4ee'));
+function colorName(hex) {
+  const p = PENS.find(([, h]) => h.toLowerCase() === hex.toLowerCase());
+  return p ? p[0] : 'custom color ' + hex;
+}
 
 function makeLayer(p) {
   return {
     mode: p.mode, R: p.R, r: p.r, hole: p.hole,
     alpha: p.alpha ?? 2 * Math.PI * p.tooth / p.R,
-    T: 2 * Math.PI * p.r / gcd(p.R, p.r), t: 0,
+    T: 2 * Math.PI * p.r / gcd(p.R, p.r), t: 0, hidden: false, wob: p.wob || null,
     segs: [{ t0: 0, t1: 0, color: p.color, width: p.width }]
   };
+}
+// a shaky hand plus up to two slipped teeth, fixed per layer so redraws match
+function makeWobble(L) {
+  const s = [];
+  const slips = Math.floor(Math.random() * 3);
+  for (let i = 0; i < slips; i++) s.push([+(L.T * (0.15 + 0.8 * Math.random())).toFixed(3), (Math.random() < 0.5 ? -1 : 1) * 2 * Math.PI / L.R]);
+  s.sort((a, b) => a[0] - b[0]);
+  return { p: [0, 1, 2, 3].map(() => +(Math.random() * 6.28).toFixed(3)), s };
 }
 
 // Position of the wheel centre, its spin and the pen tip, in tooth units.
 function geom(L, t) {
   const { R, r } = L;
   const inside = L.mode === 'in';
+  let alpha = L.alpha;
+  if (L.wob) for (const [ts, da] of L.wob.s) if (t > ts) alpha += da;
   const dist = inside ? R - r : R + r;
-  const spin = (inside ? -(R - r) / r : (R + r) / r) * t + L.alpha;
-  const th = t + L.alpha, d = L.hole * r;
+  const spin = (inside ? -(R - r) / r : (R + r) / r) * t + alpha;
+  const th = t + alpha, d = L.hole * r;
   const wx = dist * Math.cos(th), wy = dist * Math.sin(th);
-  return { wx, wy, spin, px: wx + d * Math.cos(spin), py: wy + d * Math.sin(spin) };
+  let px = wx + d * Math.cos(spin), py = wy + d * Math.sin(spin);
+  if (L.wob) {
+    const w = L.wob.p;
+    px += 0.7 * Math.sin(t * 0.37 + w[0]) * Math.sin(t * 0.051 + w[1]);
+    py += 0.7 * Math.cos(t * 0.29 + w[2]) * Math.sin(t * 0.043 + w[3]);
+  }
+  return { wx, wy, spin, px, py };
 }
-function stepFor(L, s) {
+function stepFor(L, s, maxStep = 0.02) {
   const inside = L.mode === 'in';
   const dist = inside ? L.R - L.r : L.R + L.r;
   const k = inside ? (L.R - L.r) / L.r : (L.R + L.r) / L.r;
-  return Math.min(0.02, 1.4 / (s * (dist + L.hole * L.r * k)));
+  return Math.min(maxStep, 1.4 / (s * (dist + L.hole * L.r * k)));
 }
 
 // Stroke part of a layer onto any canvas: s = px per tooth unit, c = centre px.
-function paintRange(ctx, L, t0, t1, color, width, s = S, c = C, minW = 0.6 * dpr) {
+function paintRange(ctx, L, t0, t1, color, width, s = S, c = C, minW = 0.6 * dpr, maxStep = 0.02) {
   if (t1 <= t0) return;
-  const step = stepFor(L, s);
+  const step = stepFor(L, s, maxStep);
   ctx.strokeStyle = color;
   ctx.lineWidth = Math.max(width * REF * s, minW);
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
@@ -333,10 +467,10 @@ function paintRange(ctx, L, t0, t1, color, width, s = S, c = C, minW = 0.6 * dpr
   ctx.stroke();
 }
 
-function paintAll(ctx, s, c, size, minW) {
-  ctx.fillStyle = PAPER[state.paper];
-  ctx.fillRect(0, 0, size, size);
-  for (const L of layers) for (const sg of L.segs) paintRange(ctx, L, sg.t0, sg.t1, sg.color, sg.width, s, c, minW);
+function paintAll(ctx, s, c, size, minW, transparent = false) {
+  ctx.clearRect(0, 0, size, size);
+  if (!transparent) { ctx.fillStyle = PAPER[state.paper]; ctx.fillRect(0, 0, size, size); }
+  for (const L of layers) if (!L.hidden) for (const sg of L.segs) paintRange(ctx, L, sg.t0, sg.t1, sg.color, sg.width, s, c, minW);
 }
 function redrawPaper() { paintAll(pctx, S, C, paper.width, 0.6 * dpr); }
 
@@ -345,12 +479,14 @@ function resize() {
   if (!w) return;
   dpr = Math.min(window.devicePixelRatio || 1, 2);
   const px = Math.round(w * dpr);
+  if (paper.width === px) return;
   for (const c of [paper, ghost, over]) { c.width = px; c.height = px; }
   C = px / 2;
   S = C * 0.97 / LIMIT;
   ghostKey = '';
   redrawPaper();
   drawOverlay();
+  syncUI();
 }
 
 // ---------- faint preview of the whole pattern ----------
@@ -358,7 +494,7 @@ let ghostKey = '';
 function drawGhost() {
   const L = cur || makeLayer(state);
   const color = cur ? cur.segs[cur.segs.length - 1].color : state.color;
-  const key = [state.preview, ghost.width, state.paper, L.mode, L.R, L.r, L.hole, L.alpha, color].join('|');
+  const key = [state.preview, ghost.width, state.paper, L.mode, L.R, L.r, L.hole, L.alpha, color, !!L.wob].join('|');
   if (key === ghostKey) return;
   ghostKey = key;
   gctx.clearRect(0, 0, ghost.width, ghost.height);
@@ -415,11 +551,11 @@ function drawOverlay() {
   octx.fillStyle = wheelFill; octx.fill();
   octx.strokeStyle = wheelLine; octx.stroke();
 
-  const holes = Math.max(5, Math.round(L.r / 5));
-  for (let i = 0; i < holes; i++) {
-    const f = 0.12 + 0.8 * i / (holes - 1);
-    if (Math.abs(f - L.hole) < 0.05) continue;
-    const a = g.spin + 2.4 * (i + 1);
+  // the real pen holes, along a spiral; the one holding the pen is drawn as the pen
+  const n = holeCount(L.r), used = nearestHole(L.r, L.hole);
+  for (let i = 1; i <= n; i++) {
+    if (i === used) continue;
+    const f = holeFrac(L.r, i), a = g.spin + 2.4 * (i - used);
     octx.beginPath();
     octx.arc(wx + f * L.r * S * Math.cos(a), wy + f * L.r * S * Math.sin(a), 1.1 * S, 0, Math.PI * 2);
     octx.stroke();
@@ -433,26 +569,56 @@ function drawOverlay() {
   octx.lineWidth = 2 * dpr; octx.strokeStyle = dark ? '#ffffff' : '#1a1e2c'; octx.stroke();
 }
 
+// ---------- sound: a soft click for each tooth that meshes ----------
+let actx = null;
+function ensureAudio() {
+  if (!actx) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) actx = new AC(); }
+  if (actx && actx.state === 'suspended') actx.resume();
+}
+function clicks(L, t0, t1) {
+  if (!state.clicks || !actx || actx.state !== 'running') return;
+  const per = L.R / (2 * Math.PI);
+  const n = Math.floor(t1 * per) - Math.floor(t0 * per);
+  if (n <= 0) return;
+  const k = Math.min(n, 4), now = actx.currentTime;
+  const vol = 0.06 / Math.max(1, n / 2);
+  for (let i = 0; i < k; i++) {
+    const when = now + i * 0.016 / k;
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = 'triangle';
+    o.frequency.value = 1500 + Math.min(n, 12) * 90;
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.exponentialRampToValueAtTime(vol, when + 0.002);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + 0.03);
+    o.connect(g); g.connect(actx.destination);
+    o.start(when); o.stop(when + 0.04);
+  }
+}
+
 // ---------- drawing control ----------
 function speedRad() { return 0.25 * Math.pow(1.6, state.speed - 1); }
 
 function startLayer(p = state) {
   cur = makeLayer(p);
+  if (state.wobble && !p.wob) cur.wob = makeWobble(cur);
   layers.push(cur);
+  redoStack = [];
+  bump();
 }
-function startNextCopy() {
-  const q = queue.shift();
-  startLayer({ ...state, color: q.color, alpha: q.alpha });
+function startNext() {
+  startLayer(queue.shift());
   running = true;
 }
 function completeCurrent() {
   cur = null; running = false;
-  if (queue.length) startNextCopy();
+  bump();
+  if (queue.length) startNext();
 }
 function advance(to) {
   const nt = Math.min(cur.T, to);
   const s = cur.segs[cur.segs.length - 1];
   paintRange(pctx, cur, cur.t, nt, s.color, s.width);
+  clicks(cur, cur.t, nt);
   cur.t = nt; s.t1 = nt;
   if (nt >= cur.T) { completeCurrent(); syncUI(); }
 }
@@ -466,7 +632,7 @@ function finishAll() {
 function liftWheel() {
   // gear geometry changed: keep what was drawn, start fresh next time
   queue = [];
-  if (cur) { if (cur.t === 0) layers.pop(); cur = null; running = false; }
+  if (cur) { if (cur.t === 0) layers.pop(); cur = null; running = false; bump(); }
 }
 function penChanged() {
   if (!cur) return;
@@ -474,24 +640,60 @@ function penChanged() {
   if (s.t1 > s.t0) cur.segs.push({ t0: cur.t, t1: cur.t, color: state.color, width: state.width });
   else { s.color = state.color; s.width = state.width; }
 }
+function undo() {
+  running = false; queue = []; cur = null; selLayer = null;
+  const L = layers.pop();
+  if (L) redoStack.push(L);
+  redrawPaper(); bump(); syncUI();
+}
+function redo() {
+  const L = redoStack.pop();
+  if (!L) return;
+  running = false; queue = []; cur = null;
+  layers.push(L);
+  redrawPaper(); bump(); syncUI();
+}
 
+function layerSettings(base, k, n, colors, startColor) {
+  const L0 = makeLayer(base);
+  const points = base.R / gcd(base.R, base.r);
+  let ci = colors.indexOf(startColor);
+  if (ci < 0) ci = 0;
+  return {
+    mode: base.mode, R: base.R, r: base.r, hole: base.hole, width: base.width,
+    alpha: L0.alpha + k * 2 * Math.PI / (points * n),
+    color: base.cycle ? colors[(ci + k) % colors.length] : base.color
+  };
+}
 function drawRosette() {
   liftWheel();
-  const L0 = makeLayer(state);
-  const points = state.R / gcd(state.R, state.r);
-  const n = state.copies;
-  const pens = visiblePens().map(p => p[1]);
-  let pi = pens.indexOf(state.color);
-  if (pi < 0) pi = 0;
+  const n = state.copies, colors = visiblePens().map(p => p[1]);
+  const base = { ...state, cycle: state.cyclePens };
   queue = [];
-  for (let k = 0; k < n; k++) {
-    queue.push({
-      alpha: L0.alpha + k * 2 * Math.PI / (points * n),
-      color: state.cyclePens ? pens[(pi + k) % pens.length] : state.color
-    });
-  }
-  startNextCopy();
+  for (let k = 0; k < n; k++) queue.push(layerSettings(base, k, n, colors, state.color));
+  startNext();
   if (reduceMotion) finishAll();
+}
+function applyRecipe(rc) {
+  running = false; cur = null; layers = []; redoStack = []; selLayer = null;
+  state.paper = rc.paper;
+  const colors = visiblePens().map(p => p[1]);
+  queue = [];
+  for (const spec of rc.layers) {
+    const base = { ...spec, hole: holeFrac(spec.r, spec.hole) };
+    const n = spec.copies || 1;
+    for (let k = 0; k < n; k++) queue.push(layerSettings(base, k, n, colors, spec.color));
+  }
+  const last = rc.layers[rc.layers.length - 1];
+  Object.assign(state, { mode: last.mode, R: last.R, r: last.r, hole: holeFrac(last.r, last.hole),
+    tooth: last.tooth, color: last.color, width: last.width, copies: COPIES.includes(last.copies) ? last.copies : state.copies,
+    cyclePens: !!last.cycle });
+  buildChips();
+  redrawPaper();
+  startNext();
+  if (reduceMotion) finishAll();
+  bump(); syncUI(); showPaper();
+  toast(`${rc.name}: drawing ${queue.length + 1} layer${queue.length ? 's' : ''}. Press Finish instantly to skip ahead.`);
 }
 
 let last = performance.now();
@@ -499,13 +701,14 @@ function frame(ts) {
   const dt = Math.min(0.05, (ts - last) / 1000); last = ts;
   if (running && cur) advance(cur.t + speedRad() * dt);
   drawGhost();
-  drawThumbs();
+  drawThumbs(ts);
+  renderLayers();
   drawOverlay();
   updateReadout();
   requestAnimationFrame(frame);
 }
 
-// ---------- crank: drag around the paper to turn the wheel ----------
+// ---------- crank: drag around the paper (or hold → on it) to turn the wheel ----------
 let crank = null;
 function angleAt(e) {
   const rect = over.getBoundingClientRect();
@@ -513,11 +716,17 @@ function angleAt(e) {
   if (Math.hypot(x, y) < rect.width * 0.04) return null;
   return Math.atan2(y, x);
 }
+function crankBy(d) {
+  if (!cur) { startLayer(); syncUI(); }
+  advance(cur.t + d);
+}
 over.addEventListener('pointerdown', e => {
   const a = angleAt(e);
   if (a === null) return;
   e.preventDefault();
+  over.focus({ preventScroll: true });
   try { over.setPointerCapture(e.pointerId); } catch {}
+  if (state.clicks) ensureAudio();
   queue = [];
   running = false;
   crank = { id: e.pointerId, a };
@@ -533,14 +742,29 @@ over.addEventListener('pointermove', e => {
   if (d < -Math.PI) d += 2 * Math.PI;
   crank.a = a;
   if (d <= 0) return; // the wheel only turns forwards
-  if (!cur) { startLayer(); syncUI(); }
-  advance(cur.t + d);
+  crankBy(d);
 });
 const endCrank = () => { crank = null; over.classList.remove('cranking'); syncUI(); };
 over.addEventListener('pointerup', endCrank);
 over.addEventListener('pointercancel', endCrank);
 
-// ---------- save and share ----------
+// bring the paper back into view when drawing starts from further down the page
+function showPaper() {
+  const r = sheet.getBoundingClientRect();
+  if (r.top >= 0 && r.bottom <= window.innerHeight) return;
+  const from = window.scrollY;
+  const to = Math.max(0, from + r.top - Math.max(8, (window.innerHeight - r.height) / 2));
+  if (reduceMotion) { window.scrollTo(0, to); return; }
+  const t0 = performance.now(), dur = 450;
+  const step = now => {
+    const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+    window.scrollTo(0, from + (to - from) * e);
+    if (k < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+// ---------- save, copy and share ----------
 function stamp() {
   const d = new Date(), p = n => String(n).padStart(2, '0');
   return `artograph-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
@@ -557,58 +781,99 @@ function toast(msg) {
   const t = $('toast');
   t.textContent = msg; t.hidden = false;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { t.hidden = true; }, 2600);
+  toastTimer = setTimeout(() => { t.hidden = true; }, 3000);
 }
-function savePNG() {
-  const P = 3000;
+function renderImage(P) {
   const c = document.createElement('canvas');
   c.width = c.height = P;
-  paintAll(c.getContext('2d'), P / 2 * 0.97 / LIMIT, P / 2, P, 0);
-  c.toBlob(b => { download(b, stamp() + '.png'); toast('Saved a 3000 × 3000 PNG'); }, 'image/png');
+  paintAll(c.getContext('2d'), P / 2 * 0.97 / LIMIT, P / 2, P, 0, state.transparent);
+  return c;
+}
+function savePNG() {
+  renderImage(3000).toBlob(b => { download(b, stamp() + '.png'); toast('Saved a 3000 × 3000 PNG'); }, 'image/png');
+}
+function copyImage() {
+  const blob = new Promise(res => renderImage(1500).toBlob(res, 'image/png'));
+  try {
+    if (!navigator.clipboard || !window.ClipboardItem) throw new Error('no clipboard');
+    navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+      .then(() => toast('Image copied. Paste it anywhere.'), () => toast('This browser won’t copy images. Use Save PNG instead.'));
+  } catch { toast('This browser won’t copy images. Use Save PNG instead.'); }
+}
+// Ramer-Douglas-Peucker: drop points that sit within eps of the line through their neighbours
+function simplify(pts, eps) {
+  const n = pts.length;
+  if (n < 3) return pts;
+  const keep = new Uint8Array(n);
+  keep[0] = keep[n - 1] = 1;
+  const stack = [[0, n - 1]];
+  while (stack.length) {
+    const [a, b] = stack.pop();
+    if (b - a < 2) continue;
+    const [ax, ay] = pts[a], [bx, by] = pts[b];
+    const dx = bx - ax, dy = by - ay, len = Math.hypot(dx, dy);
+    let maxD = -1, idx = -1;
+    for (let i = a + 1; i < b; i++) {
+      const [x, y] = pts[i];
+      const d = len < 1e-9 ? Math.hypot(x - ax, y - ay) : Math.abs(dy * x - dx * y + bx * ay - by * ax) / len;
+      if (d > maxD) { maxD = d; idx = i; }
+    }
+    if (maxD > eps) { keep[idx] = 1; stack.push([a, idx], [idx, b]); }
+  }
+  return pts.filter((_, i) => keep[i]);
 }
 function saveSVG() {
-  const f = n => n.toFixed(2);
-  const out = [
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${f(-HALF)} ${f(-HALF)} ${f(2 * HALF)} ${f(2 * HALF)}" width="2000" height="2000">`,
-    `<rect x="${f(-HALF)}" y="${f(-HALF)}" width="${f(2 * HALF)}" height="${f(2 * HALF)}" fill="${PAPER[state.paper]}"/>`
-  ];
-  for (const L of layers) for (const sg of L.segs) {
-    if (sg.t1 <= sg.t0) continue;
-    const step = stepFor(L, 2.5);
-    const pts = [];
-    for (let t = sg.t0; t < sg.t1; t += step) { const g = geom(L, t); pts.push(f(g.px) + ' ' + f(g.py)); }
-    const g = geom(L, sg.t1); pts.push(f(g.px) + ' ' + f(g.py));
-    out.push(`<path d="M${pts.join('L')}" fill="none" stroke="${sg.color}" stroke-width="${(sg.width * REF).toFixed(3)}" stroke-linecap="round" stroke-linejoin="round"/>`);
+  const f = n => (Math.round(n * 100) / 100).toString();
+  const out = [`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${f(-HALF)} ${f(-HALF)} ${f(2 * HALF)} ${f(2 * HALF)}" width="2000" height="2000">`];
+  if (!state.transparent) out.push(`<rect x="${f(-HALF)}" y="${f(-HALF)}" width="${f(2 * HALF)}" height="${f(2 * HALF)}" fill="${PAPER[state.paper]}"/>`);
+  for (const L of layers) {
+    if (L.hidden) continue;
+    for (const sg of L.segs) {
+      if (sg.t1 <= sg.t0) continue;
+      const step = stepFor(L, 6);
+      const pts = [];
+      for (let t = sg.t0; t < sg.t1; t += step) { const g = geom(L, t); pts.push([g.px, g.py]); }
+      const g = geom(L, sg.t1); pts.push([g.px, g.py]);
+      const d = simplify(pts, 0.04).map(([x, y]) => f(x) + ' ' + f(y)).join(' ');
+      out.push(`<path d="M${d}" fill="none" stroke="${sg.color}" stroke-width="${(sg.width * REF).toFixed(3)}" stroke-linecap="round" stroke-linejoin="round"/>`);
+    }
   }
   out.push('</svg>');
-  download(new Blob([out.join('\n')], { type: 'image/svg+xml' }), stamp() + '.svg');
-  toast('Saved an SVG');
+  const blob = new Blob([out.join('\n')], { type: 'image/svg+xml' });
+  download(blob, stamp() + '.svg');
+  toast(`Saved an SVG (${Math.max(1, Math.round(blob.size / 1024))} KB)`);
 }
 
 const b64 = s => btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 const unb64 = s => atob(s.replace(/-/g, '+').replace(/_/g, '/'));
+const r4 = n => Math.round(n * 10000) / 10000;
 function encode() {
   return b64(JSON.stringify({
-    v: 1, p: state.paper === 'black' ? 1 : 0,
-    s: [state.mode === 'in' ? 0 : 1, state.R, state.r, Math.round(state.hole * 100), state.tooth, state.color.slice(1), state.width],
-    L: layers.map(L => [L.mode === 'in' ? 0 : 1, L.R, L.r, Math.round(L.hole * 100), +L.alpha.toFixed(5),
-      L.segs.filter(s => s.t1 > s.t0).map(s => [+s.t0.toFixed(4), +s.t1.toFixed(4), s.color.slice(1), s.width])])
-      .filter(l => l[5].length)
+    v: 2, p: state.paper === 'black' ? 1 : 0,
+    s: [state.mode === 'in' ? 0 : 1, state.R, state.r, r4(state.hole * 100), state.tooth, state.color.slice(1), state.width],
+    L: layers.filter(L => !L.hidden).map(L => {
+      const row = [L.mode === 'in' ? 0 : 1, L.R, L.r, r4(L.hole * 100), r4(L.alpha),
+        L.segs.filter(s => s.t1 > s.t0).map(s => [r4(s.t0), r4(s.t1), s.color.slice(1), s.width])];
+      if (L.wob) row.push([L.wob.p, L.wob.s.map(([t, da]) => [t, r4(da)])]);
+      return row;
+    }).filter(l => l[5].length)
   }));
 }
 function decode(code) {
   try {
     const o = JSON.parse(unb64(code));
-    if (o.v !== 1) return false;
+    if (o.v !== 1 && o.v !== 2) return false;
     const num = (x, lo, hi) => typeof x === 'number' && isFinite(x) && x >= lo && x <= hi;
     const hex = h => typeof h === 'string' && /^[0-9a-fA-F]{6}$/.test(h);
     const out = [];
     for (const l of o.L) {
-      const [m, R, r, hole, alpha, segs] = l;
+      const [m, R, r, hole, alpha, segs, wob] = l;
       if (!num(R, 8, 200) || !num(r, 8, 200) || !num(hole, 0, 100) || !num(alpha, -100, 100)) return false;
       const L = makeLayer({ mode: m ? 'out' : 'in', R, r, hole: hole / 100, alpha, color: '#000', width: 1 });
       L.segs = segs.filter(s => num(s[0], 0, L.T) && num(s[1], 0, L.T) && hex(s[2]) && num(s[3], 0.1, 10))
         .map(s => ({ t0: s[0], t1: s[1], color: '#' + s[2], width: s[3] }));
+      if (Array.isArray(wob) && Array.isArray(wob[0]) && wob[0].length === 4 && wob[0].every(x => num(x, -10, 10)) && Array.isArray(wob[1]))
+        L.wob = { p: wob[0], s: wob[1].filter(x => Array.isArray(x) && num(x[0], 0, L.T) && num(x[1], -1, 1)).slice(0, 4) };
       L.t = Math.max(0, ...L.segs.map(s => s.t1));
       out.push(L);
     }
@@ -617,7 +882,7 @@ function decode(code) {
     state.mode = m ? 'out' : 'in';
     if (num(R, 8, 200)) state.R = R;
     if (num(r, 8, 200)) state.r = r;
-    if (num(hole, 10, 95)) state.hole = hole / 100;
+    if (num(hole, 5, 99)) state.hole = hole / 100;
     if (num(tooth, 0, 200)) state.tooth = tooth;
     if (hex(color)) state.color = '#' + color;
     if (num(width, 0.5, 4)) state.width = width;
@@ -645,11 +910,17 @@ function share() {
 // ---------- UI ----------
 const ringChips = $('ringChips'), wheelChips = $('wheelChips'), copyChips = $('copyChips'), swatches = $('swatches');
 
+function pickWheel(n) {
+  state.r = n;
+  state.hole = snapHole(n, state.hole);
+  liftWheel(); syncUI();
+}
 function buildChips() {
   ringChips.innerHTML = '';
   for (const n of ringList()) {
     const b = document.createElement('button');
-    b.className = 'chip'; b.textContent = n; b.id = 'ring-' + n;
+    b.className = 'ringbtn'; b.id = 'ring-' + n; b.dataset.n = n;
+    b.innerHTML = `<span class="teeth">${n}</span><span class="pts"></span>`;
     b.addEventListener('click', () => { state.R = n; fixParams(); liftWheel(); syncUI(); });
     ringChips.appendChild(b);
   }
@@ -658,7 +929,7 @@ function buildChips() {
       const b = document.createElement('button');
       b.className = 'wheel'; b.id = 'wheel-' + n; b.dataset.n = n;
       b.innerHTML = `<canvas aria-hidden="true"></canvas><span class="teeth">${n}</span><span class="pts"></span>`;
-      b.addEventListener('click', () => { state.r = n; liftWheel(); syncUI(); });
+      b.addEventListener('click', () => pickWheel(n));
       wheelChips.appendChild(b);
     }
     for (const n of COPIES) {
@@ -668,6 +939,7 @@ function buildChips() {
       copyChips.appendChild(b);
     }
   }
+  thumbKey = '';
 }
 function buildSwatches() {
   for (const [name, hex] of PENS) {
@@ -675,8 +947,33 @@ function buildSwatches() {
     b.className = 'sw'; b.style.background = hex; b.title = name;
     b.setAttribute('aria-label', name + ' pen'); b.dataset.color = hex;
     b.id = 'pen-' + name.replace(/\s/g, '');
-    b.addEventListener('click', () => { state.color = hex; $('customColor').value = hex; penChanged(); syncUI(); });
+    b.addEventListener('click', () => { state.color = hex; penChanged(); syncUI(); });
     swatches.appendChild(b);
+  }
+}
+function buildRecipes() {
+  const box = $('recipes');
+  for (const rc of RECIPES) {
+    const b = document.createElement('button');
+    b.className = 'recipe'; b.id = 'recipe-' + rc.name.toLowerCase();
+    b.setAttribute('aria-label', `Draw the ${rc.name} recipe`);
+    const cv = document.createElement('canvas');
+    b.append(cv, rc.name);
+    b.addEventListener('click', () => applyRecipe(rc));
+    box.appendChild(b);
+    const px = 64 * Math.min(window.devicePixelRatio || 1, 2);
+    cv.width = cv.height = px;
+    const ctx = cv.getContext('2d');
+    ctx.fillStyle = PAPER[rc.paper]; ctx.fillRect(0, 0, px, px);
+    const s = px / 2 * 0.95 / LIMIT, colors = PENS.map(p => p[1]).filter(h => rc.paper === 'black' ? h !== '#1d1f2b' : h !== '#f4f4ee');
+    for (const spec of rc.layers) {
+      const base = { ...spec, hole: holeFrac(spec.r, spec.hole) };
+      const n = spec.copies || 1;
+      for (let k = 0; k < n; k++) {
+        const L = makeLayer(layerSettings(base, k, n, colors, spec.color));
+        paintRange(ctx, L, 0, L.T, L.segs[0].color, Math.max(0.6, spec.width * 0.5) / (REF * s) * (px / 64) / 2, s, px / 2, 0, 0.05);
+      }
+    }
   }
 }
 function fixParams() {
@@ -686,14 +983,32 @@ function fixParams() {
     const ok = WHEELS.filter(wheelOk);
     state.r = ok.reduce((best, n) => Math.abs(n - state.r) < Math.abs(best - state.r) ? n : best, ok[0]);
   }
-  state.tooth = Math.min(state.tooth, state.R - 1);
+  state.tooth = Math.min(state.tooth, state.R - 0.5);
+}
+function lastMatch() {
+  for (let i = layers.length - 1; i >= 0; i--) {
+    const L = layers[i];
+    if (L !== cur && L.mode === state.mode && L.R === state.R && L.r === state.r) return L;
+  }
+  return null;
+}
+function setTab(tab) {
+  state.tab = tab;
+  panel.dataset.tab = tab;
+  for (const b of document.querySelectorAll('.tabs button')) b.setAttribute('aria-selected', b.dataset.go === tab);
 }
 
 function syncUI() {
   for (const b of document.querySelectorAll('#modeSeg button')) b.setAttribute('aria-pressed', b.dataset.mode === state.mode);
   for (const b of document.querySelectorAll('#paperSeg button')) b.setAttribute('aria-pressed', b.dataset.paper === state.paper);
   $('ringLabel').textContent = state.mode === 'in' ? 'Pick a ring' : 'Pick a centre gear';
-  for (const b of ringChips.children) b.setAttribute('aria-pressed', +b.textContent === state.R);
+  for (const b of ringChips.children) {
+    const R = +b.dataset.n;
+    const good = WHEELS.filter(r => fitsFor(state.mode, R, r) && rating(R, r).kind === 'good').length;
+    b.querySelector('.pts').textContent = `${good} good wheel${good === 1 ? '' : 's'}`;
+    b.setAttribute('aria-label', `${R}-tooth ${state.mode === 'in' ? 'ring' : 'centre gear'}: ${good} wheels make a good match`);
+    b.setAttribute('aria-pressed', R === state.R);
+  }
   for (const b of wheelChips.children) {
     const n = +b.dataset.n;
     const rt = rating(state.R, n);
@@ -709,9 +1024,10 @@ function syncUI() {
   for (const b of copyChips.children) b.setAttribute('aria-pressed', +b.dataset.n === state.copies);
   for (const b of swatches.children) b.setAttribute('aria-pressed', b.dataset.color.toLowerCase() === state.color.toLowerCase());
   $('customColor').value = state.color;
-  const zone = holeZone(state.hole);
-  $('hole').value = Math.round(state.hole * 100);
-  $('holeOut').textContent = HOLE_ZONES[zone] + ' · ' + Math.round(state.hole * 100) + '%';
+
+  const holes = holeCount(state.r), hi = nearestHole(state.r, state.hole), zone = holeZone(state.hole);
+  $('hole').max = holes; $('hole').value = hi;
+  $('holeOut').textContent = `${hi} of ${holes} · ${HOLE_ZONES[zone].toLowerCase()}`;
   [...$('holeScale').children].forEach((s, i) => s.classList.toggle('on', i === zone));
 
   const g = gcd(state.R, state.r);
@@ -736,118 +1052,159 @@ function syncUI() {
   const sw = suggestWidth(state.R, state.r);
   $('widthHint').textContent = `Suggested for this ${state.R / g}-point pattern: ${sw} px`;
   $('widthUse').hidden = sw === state.width;
+
   $('speed').value = state.speed; $('speedOut').textContent = state.speed + ' / 10';
   $('showGears').checked = state.showGears;
   $('showPreview').checked = state.preview;
+  $('clicks').checked = state.clicks;
+  $('wobble').checked = state.wobble;
+  $('transparent').checked = state.transparent;
   $('cyclePens').checked = state.cyclePens;
   $('drawBtn').textContent = running ? 'Pause' : cur ? 'Resume' : 'Draw';
   $('rosetteBtn').textContent = `Draw rosette ×${state.copies}`;
+  $('undoBtn').disabled = !layers.length;
+  $('redoBtn').disabled = !redoStack.length;
   updateReadout();
+}
+function fmtTime(sec) {
+  const s = Math.max(1, Math.round(sec));
+  return s < 60 ? s + ' s' : Math.floor(s / 60) + ' min' + (s % 60 ? ' ' + (s % 60) + ' s' : '');
 }
 function updateReadout() {
   const L = cur || state;
   const g = gcd(L.R, L.r);
   const pts = L.R / g, trips = L.r / g;
-  $('statShape').innerHTML = `<b>${pts}</b> points · wheel goes round <b>${trips}</b>×`;
+  const shape = `<b>${pts}</b> points · wheel goes round <b>${trips}</b>×`;
+  if ($('statShape').innerHTML !== shape) $('statShape').innerHTML = shape;
   const pct = cur ? Math.floor(100 * cur.t / cur.T) + '%' : 'ready';
   const more = queue.length ? ` · <b>${queue.length}</b> more` : '';
   $('statProgress').innerHTML = `layer <b>${layers.length + (cur ? 0 : 1)}</b> · <b>${pct}</b>${more}`;
-  const T = cur ? cur.T : 2 * Math.PI * state.r / g;
+  const T = cur ? cur.T : 2 * Math.PI * state.r / gcd(state.R, state.r);
   const time = cur
     ? `About ${fmtTime((cur.T - cur.t) / speedRad())} left at speed ${state.speed}.`
     : `This pattern takes about ${fmtTime(T / speedRad())} at speed ${state.speed}.`;
   if ($('timeHint').textContent !== time) $('timeHint').textContent = time;
 }
 
-// ---------- what the numbers mean ----------
-const HOLE_ZONES = ['Gentle waves', 'Rounded petals', 'Sharp points'];
-const holeZone = h => h < 0.4 ? 0 : h < 0.75 ? 1 : 2;
-function rating(R, r) {
-  const g = gcd(R, r), points = R / g, trips = r / g;
-  const kind = points <= 4 ? 'simple' : (points > 30 || trips > 14) ? 'dense' : points <= 24 ? 'good' : 'busy';
-  return { points, trips, kind };
+// wheel previews, in the current pen on the current paper; throttled while sliders move
+let thumbKey = '', thumbAt = 0;
+function inkFor(color) {
+  const lum = h => { const n = parseInt(h.slice(1), 16); return (0.299 * (n >> 16) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) / 255; };
+  return Math.abs(lum(color) - lum(PAPER[state.paper])) < 0.2 ? '#8a8f9e' : color;
 }
-function suggestWidth(R, r) {
-  const { points, trips } = rating(R, r);
-  const busy = Math.max(points, trips * 2.5);
-  return busy <= 8 ? 2.5 : busy <= 16 ? 1.75 : busy <= 30 ? 1.25 : busy <= 50 ? 1 : 0.75;
-}
-function fmtTime(sec) {
-  const s = Math.max(1, Math.round(sec));
-  return s < 60 ? s + ' s' : Math.floor(s / 60) + ' min' + (s % 60 ? ' ' + (s % 60) + ' s' : '');
-}
-// the most recent layer with the same gears, if any
-function lastMatch() {
-  for (let i = layers.length - 1; i >= 0; i--) {
-    const L = layers[i];
-    if (L !== cur && L.mode === state.mode && L.R === state.R && L.r === state.r) return L;
-  }
-  return null;
-}
-let thumbKey = '';
-function drawThumbs() {
-  const fg = getComputedStyle(wheelChips).color;
-  const key = [state.mode, state.R, state.hole, fg, dpr, wheelChips.clientWidth].join('|');
-  if (key === thumbKey) return;
-  thumbKey = key;
+function drawThumbs(now) {
+  const key = [state.mode, state.R, state.hole, state.color, state.paper, dpr, wheelChips.clientWidth].join('|');
+  if (key === thumbKey || now - thumbAt < 120) return;
+  thumbKey = key; thumbAt = now;
+  const ink = inkFor(state.color);
   for (const b of wheelChips.children) {
     const cv = b.querySelector('canvas');
     const px = Math.round((cv.clientWidth || 48) * dpr);
     cv.width = cv.height = px;
     const ctx = cv.getContext('2d');
+    ctx.fillStyle = PAPER[state.paper]; ctx.fillRect(0, 0, px, px);
     const r = +b.dataset.n;
-    const L = makeLayer({ ...state, r, tooth: 0 });
+    const L = makeLayer({ ...state, r, hole: snapHole(r, state.hole), tooth: 0 });
     const ext = (L.mode === 'in' ? L.R - r : L.R + r) + L.hole * r;
-    const s = px / 2 * 0.94 / ext;
+    const s = px / 2 * 0.9 / ext;
     const lw = (rating(state.R, r).kind === 'dense' ? 0.45 : 0.9) * dpr;
-    paintRange(ctx, L, 0, L.T, fg, lw / (REF * s), s, px / 2, 0);
+    paintRange(ctx, L, 0, L.T, ink, lw / (REF * s), s, px / 2, 0, 0.05);
   }
 }
 
+// layers strip
+let stripVersion = -1;
+function layerDesc(L, i) {
+  const p = L.R / gcd(L.R, L.r);
+  const colors = [...new Set(L.segs.map(s => colorName(s.color)))].join(' and ');
+  return `Layer ${i + 1}: ${p}-point pattern in ${colors}${L.hidden ? ', hidden' : ''}${L === cur ? ', being drawn' : ''}`;
+}
+function renderLayers() {
+  if (stripVersion === version) return;
+  stripVersion = version;
+  if (selLayer && !layers.includes(selLayer)) selLayer = null;
+  const box = $('layers');
+  box.innerHTML = '';
+  const px = 48 * dpr, s = px / 2 * 0.95 / LIMIT;
+  layers.forEach((L, i) => {
+    const b = document.createElement('button');
+    b.className = 'layer' + (L.hidden ? ' off' : '');
+    b.setAttribute('aria-label', layerDesc(L, i));
+    b.title = layerDesc(L, i);
+    b.setAttribute('aria-pressed', L === selLayer);
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = px;
+    const ctx = cv.getContext('2d');
+    ctx.fillStyle = PAPER[state.paper]; ctx.fillRect(0, 0, px, px);
+    if (L === cur) { ctx.globalAlpha = 0.35; paintRange(ctx, L, 0, L.T, L.segs[0].color, 0.6 * dpr / (REF * s), s, px / 2, 0, 0.05); ctx.globalAlpha = 1; }
+    else for (const sg of L.segs) paintRange(ctx, L, sg.t0, sg.t1, sg.color, Math.max(0.5, sg.width * 0.4) * dpr / (REF * s), s, px / 2, 0, 0.05);
+    b.appendChild(cv);
+    b.addEventListener('click', () => { selLayer = selLayer === L ? null : L; bump(); syncLayerTools(); });
+    box.appendChild(b);
+  });
+  $('layerCount').textContent = layers.length ? `${layers.length} · tap one to change it` : '';
+  syncLayerTools();
+  const sum = layers.length
+    ? `Drawing with ${layers.length} layer${layers.length > 1 ? 's' : ''}: ` + layers.map((L, i) => layerDesc(L, i).replace(/^Layer \d+: /, '')).join('; ') + '.'
+    : 'Blank paper.';
+  paper.setAttribute('aria-label', 'Artograph drawing. ' + sum);
+  $('srSummary').textContent = sum;
+  $('undoBtn').disabled = !layers.length;
+  $('redoBtn').disabled = !redoStack.length;
+}
+function syncLayerTools() {
+  $('layerTools').hidden = !selLayer;
+  if (selLayer) $('layerHide').textContent = selLayer.hidden ? 'Show' : 'Hide';
+}
+$('layerHide').addEventListener('click', () => { if (!selLayer) return; selLayer.hidden = !selLayer.hidden; redrawPaper(); bump(); });
+$('layerRecolor').addEventListener('click', () => {
+  if (!selLayer) return;
+  for (const s of selLayer.segs) s.color = state.color;
+  redrawPaper(); bump();
+  toast(`Layer recolored ${colorName(state.color)}`);
+});
+$('layerDelete').addEventListener('click', () => {
+  if (!selLayer) return;
+  if (selLayer === cur) { cur = null; running = false; queue = []; }
+  layers.splice(layers.indexOf(selLayer), 1);
+  selLayer = null; redrawPaper(); bump(); syncUI();
+});
+
+// ---------- events ----------
+document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => setTab(b.dataset.go)));
 document.querySelectorAll('#modeSeg button').forEach(b => b.addEventListener('click', () => {
   if (state.mode === b.dataset.mode) return;
-  state.mode = b.dataset.mode; fixParams(); buildChips(); liftWheel(); syncUI();
+  state.mode = b.dataset.mode; fixParams(); state.hole = snapHole(state.r, state.hole); buildChips(); liftWheel(); syncUI();
 }));
 document.querySelectorAll('#paperSeg button').forEach(b => b.addEventListener('click', () => {
-  state.paper = b.dataset.paper; redrawPaper(); syncUI();
+  state.paper = b.dataset.paper; redrawPaper(); bump(); syncUI();
 }));
-$('hole').addEventListener('input', e => { state.hole = e.target.value / 100; liftWheel(); syncUI(); });
+$('hole').addEventListener('input', e => { state.hole = holeFrac(state.r, +e.target.value); liftWheel(); syncUI(); });
 $('tooth').addEventListener('input', e => { state.tooth = +e.target.value; liftWheel(); syncUI(); });
 $('width').addEventListener('input', e => { state.width = +e.target.value; penChanged(); syncUI(); });
 $('speed').addEventListener('input', e => { state.speed = +e.target.value; syncUI(); });
 $('customColor').addEventListener('input', e => { state.color = e.target.value; penChanged(); syncUI(); });
 $('showGears').addEventListener('change', e => { state.showGears = e.target.checked; });
 $('showPreview').addEventListener('change', e => { state.preview = e.target.checked; });
+$('clicks').addEventListener('change', e => { state.clicks = e.target.checked; if (state.clicks) ensureAudio(); });
+$('wobble').addEventListener('change', e => { state.wobble = e.target.checked; toast(state.wobble ? 'Wobble is on for new layers' : 'Wobble is off for new layers'); });
+$('transparent').addEventListener('change', e => { state.transparent = e.target.checked; });
 $('cyclePens').addEventListener('change', e => { state.cyclePens = e.target.checked; });
 
-// bring the paper back into view when drawing starts from further down the panel
-function showPaper() {
-  const r = sheet.getBoundingClientRect();
-  if (r.top >= 0 && r.bottom <= window.innerHeight) return;
-  const from = window.scrollY;
-  const to = Math.max(0, from + r.top - Math.max(8, (window.innerHeight - r.height) / 2));
-  if (reduceMotion) { window.scrollTo(0, to); return; }
-  const t0 = performance.now(), dur = 450;
-  const step = now => {
-    const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
-    window.scrollTo(0, from + (to - from) * e);
-    if (k < 1) requestAnimationFrame(step);
-  };
-  requestAnimationFrame(step);
-}
 $('drawBtn').addEventListener('click', () => {
+  if (state.clicks) ensureAudio();
   if (running) running = false;
   else { if (!cur) startLayer(); running = true; showPaper(); }
   syncUI();
 });
 $('finishBtn').addEventListener('click', () => { finishAll(); syncUI(); });
-$('undoBtn').addEventListener('click', () => {
-  running = false; cur = null; queue = []; layers.pop(); redrawPaper(); syncUI();
-});
+$('undoBtn').addEventListener('click', undo);
+$('redoBtn').addEventListener('click', redo);
 $('clearBtn').addEventListener('click', () => {
-  running = false; cur = null; queue = []; layers = []; redrawPaper(); syncUI();
+  running = false; cur = null; queue = []; layers = []; redoStack = []; selLayer = null;
+  redrawPaper(); bump(); syncUI();
 });
-$('rosetteBtn').addEventListener('click', () => { drawRosette(); syncUI(); showPaper(); });
+$('rosetteBtn').addEventListener('click', () => { if (state.clicks) ensureAudio(); drawRosette(); bump(); syncUI(); showPaper(); });
 $('fitBtn').addEventListener('click', () => {
   const g = gcd(state.R, state.r);
   const prev = lastMatch();
@@ -862,8 +1219,10 @@ $('widthUse').addEventListener('click', () => {
 });
 $('pngBtn').addEventListener('click', savePNG);
 $('svgBtn').addEventListener('click', saveSVG);
+$('copyImgBtn').addEventListener('click', copyImage);
 $('shareBtn').addEventListener('click', share);
 $('surpriseBtn').addEventListener('click', () => {
+  if (state.clicks) ensureAudio();
   liftWheel();
   const pick = a => a[Math.floor(Math.random() * a.length)];
   state.mode = Math.random() < 0.72 ? 'in' : 'out';
@@ -874,7 +1233,8 @@ $('surpriseBtn').addEventListener('click', () => {
     const trips = state.r / gcd(state.R, state.r);
     if (trips >= 2 && trips <= 16) break;
   }
-  state.hole = (40 + Math.floor(Math.random() * 56)) / 100;
+  const n = holeCount(state.r);
+  state.hole = holeFrac(state.r, Math.max(2, Math.floor(n * 0.35 + Math.random() * n * 0.65)));
   state.tooth = Math.floor(Math.random() * state.R);
   state.color = pick(visiblePens())[1];
   startLayer(); running = true;
@@ -883,8 +1243,39 @@ $('surpriseBtn').addEventListener('click', () => {
   showPaper();
 });
 
+function stepWheel(dir) {
+  const ok = WHEELS.filter(wheelOk);
+  const i = ok.indexOf(state.r);
+  const next = ok[Math.max(0, Math.min(ok.length - 1, (i < 0 ? 0 : i) + dir))];
+  if (next !== state.r) { pickWheel(next); toast(`${next}-tooth wheel · ${rating(state.R, next).points} points`); }
+}
+document.addEventListener('keydown', e => {
+  if (e.altKey || e.metaKey) return;
+  const tg = e.target;
+  if (tg.matches && tg.matches('input:not([type=range]):not([type=checkbox]), textarea, select')) return;
+  if (tg === over && (e.key === 'ArrowRight' || e.key === 'ArrowDown')) {
+    e.preventDefault();
+    if (state.clicks) ensureAudio();
+    queue = []; running = false;
+    crankBy(0.12);
+    return;
+  }
+  if (tg.matches && tg.matches('input[type=range]') && e.key.startsWith('Arrow')) return;
+  const k = e.key.toLowerCase();
+  if (e.key === ' ') {
+    if (tg.matches && tg.matches('button, input[type=checkbox]')) return;
+    e.preventDefault(); $('drawBtn').click();
+  } else if ((k === 'z' && e.shiftKey) || (k === 'y' && e.ctrlKey)) {
+    e.preventDefault(); redo();
+  } else if (k === 'z') {
+    e.preventDefault(); undo();
+  } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+    e.preventDefault(); stepWheel(e.key === 'ArrowRight' ? 1 : -1);
+  }
+});
+
 // ---------- start: a shared drawing, or one already on the paper ----------
-buildChips(); buildSwatches();
+buildChips(); buildSwatches(); buildRecipes(); setTab('gears');
 const shared = location.hash.startsWith('#d=') && decode(location.hash.slice(3));
 fixParams();
 resize();
@@ -892,8 +1283,8 @@ new ResizeObserver(resize).observe(sheet);
 
 if (!shared) {
   const presets = [
-    { mode: 'in', R: 150, r: 63, hole: 0.82, tooth: 0, color: '#0f9b8e', width: 1 },
-    { mode: 'in', R: 150, r: 45, hole: 0.55, tooth: 7, color: '#7b4fd8', width: 1.5 }
+    { mode: 'in', R: 150, r: 63, hole: holeFrac(63, 11), tooth: 0, color: '#0f9b8e', width: 1 },
+    { mode: 'in', R: 150, r: 45, hole: holeFrac(45, 5), tooth: 7, color: '#7b4fd8', width: 1.5 }
   ];
   for (const p of presets) { startLayer(p); finishNow(); }
   startLayer();
@@ -902,10 +1293,10 @@ if (!shared) {
   redrawPaper();
   toast('Opened a shared drawing');
 }
+bump();
 syncUI();
 requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
 })();
 </script>
-
 </body>
 </html>
