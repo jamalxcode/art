@@ -80,6 +80,24 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:0}
 .share input{flex:1;min-width:0;font-family:var(--mono);font-size:12px;padding:7px 8px;border:1px solid var(--line);border-radius:7px;background:var(--chip);color:var(--fg)}
 button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .hint{font-size:12.5px;color:var(--muted);margin:0}
+.legend{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);margin:0}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--gold);flex:none}
+.wheels{display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:5px}
+.wheel{position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;padding:4px 3px 5px;border:1px solid var(--line);border-radius:7px;background:var(--chip);color:var(--fg);cursor:pointer;font:inherit;min-width:0}
+.wheel canvas{width:100%;aspect-ratio:1;display:block}
+.wheel .teeth{font-family:var(--mono);font-size:12px;font-weight:500;line-height:1.2}
+.wheel .pts{font-size:10.5px;color:var(--muted);line-height:1.1;white-space:nowrap}
+.wheel.good::after{content:"";position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--gold)}
+.wheel.dense .pts{font-style:italic}
+.wheel:hover:not(:disabled){border-color:var(--accent)}
+.wheel[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:var(--panel)}
+.wheel:disabled{opacity:.3;cursor:not-allowed}
+.scale{display:flex;justify-content:space-between;gap:6px;font-size:11.5px;color:var(--muted);margin-top:-2px}
+.scale .on{color:var(--accent);font-weight:600}
+.sample{height:26px;border-radius:6px;border:1px solid var(--line);display:flex;align-items:center;padding-inline:12px}
+.sample-line{width:100%;border-radius:99px}
+.suggest{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.btn.small{padding:5px 10px;font-size:12.5px;flex:none}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:999px;font-weight:500;box-shadow:var(--shadow);z-index:10}
 </style>
 
@@ -141,8 +159,9 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
       <span class="step-num">4</span>
       <h2>Pick a wheel</h2>
       <div class="step-body">
-        <div class="label"><span>Teeth</span></div>
-        <div class="chips" id="wheelChips"></div>
+        <p class="legend"><span class="dot"></span> Good match with this ring</p>
+        <div class="wheels" id="wheelChips"></div>
+        <p class="hint">Each preview shows the pattern that wheel makes with your ring and pen hole.</p>
       </div>
     </section>
 
@@ -150,10 +169,14 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
       <span class="step-num">5</span>
       <h2>Put the pen in a hole</h2>
       <div class="step-body">
-        <div class="label"><label for="hole">Distance from centre</label><output id="holeOut"></output></div>
+        <div class="label"><label for="hole">Pen hole</label><output id="holeOut"></output></div>
         <input type="range" id="hole" min="10" max="95" step="1">
+        <div class="scale" id="holeScale"><span>Gentle waves</span><span>Rounded petals</span><span>Sharp points</span></div>
         <div class="label"><label for="tooth">Start at tooth</label><output id="toothOut"></output></div>
-        <input type="range" id="tooth" min="0" max="149" step="1">
+        <input type="range" id="tooth" min="0" max="149" step="0.5" list="toothTicks">
+        <datalist id="toothTicks"></datalist>
+        <button class="btn" id="fitBtn">Fit between the points</button>
+        <p class="hint">Turns the next layer half a point, so it sits in the gaps of the last one. Tick marks show turns that line up.</p>
       </div>
     </section>
 
@@ -165,6 +188,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
         <label class="custom" for="customColor">Any color <input type="color" id="customColor" value="#2f56e0"></label>
         <div class="label"><label for="width">Line width</label><output id="widthOut"></output></div>
         <input type="range" id="width" min="0.5" max="4" step="0.25">
+        <div class="sample" id="sample" aria-hidden="true"><div class="sample-line" id="sampleLine"></div></div>
+        <div class="suggest"><span class="hint" id="widthHint"></span><button class="btn small" id="widthUse">Use it</button></div>
       </div>
     </section>
 
@@ -181,6 +206,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
         <p class="hint">Or drag clockwise around the paper to turn the wheel by hand.</p>
         <div class="label"><label for="speed">Speed</label><output id="speedOut"></output></div>
         <input type="range" id="speed" min="1" max="10" step="1">
+        <p class="hint" id="timeHint"></p>
         <label class="check" for="showGears"><input type="checkbox" id="showGears" checked> Show the gears</label>
         <label class="check" for="showPreview"><input type="checkbox" id="showPreview" checked> Preview the pattern</label>
       </div>
@@ -473,6 +499,7 @@ function frame(ts) {
   const dt = Math.min(0.05, (ts - last) / 1000); last = ts;
   if (running && cur) advance(cur.t + speedRad() * dt);
   drawGhost();
+  drawThumbs();
   drawOverlay();
   updateReadout();
   requestAnimationFrame(frame);
@@ -628,7 +655,8 @@ function buildChips() {
   if (!wheelChips.childElementCount) {
     for (const n of WHEELS) {
       const b = document.createElement('button');
-      b.className = 'chip'; b.textContent = n; b.id = 'wheel-' + n;
+      b.className = 'wheel'; b.id = 'wheel-' + n; b.dataset.n = n;
+      b.innerHTML = `<canvas aria-hidden="true"></canvas><span class="teeth">${n}</span><span class="pts"></span>`;
       b.addEventListener('click', () => { state.r = n; liftWheel(); syncUI(); });
       wheelChips.appendChild(b);
     }
@@ -666,19 +694,47 @@ function syncUI() {
   $('ringLabel').textContent = state.mode === 'in' ? 'Pick a ring' : 'Pick a centre gear';
   for (const b of ringChips.children) b.setAttribute('aria-pressed', +b.textContent === state.R);
   for (const b of wheelChips.children) {
-    const n = +b.textContent;
+    const n = +b.dataset.n;
+    const rt = rating(state.R, n);
     b.disabled = !wheelOk(n);
-    b.title = b.disabled ? 'Too big: it would run off the paper' : n + '-tooth wheel';
+    b.className = 'wheel ' + rt.kind;
+    b.querySelector('.pts').textContent = rt.kind === 'dense' ? 'dense' : rt.points + ' pts';
+    const desc = `${n}-tooth wheel: ${rt.points} points, goes round ${rt.trips} times` +
+      (rt.kind === 'good' ? ', a good match' : rt.kind === 'dense' ? ', a dense pattern' : rt.kind === 'simple' ? ', a simple shape' : '');
+    b.title = b.disabled ? `${n}-tooth wheel: too big, it would run off the paper` : desc;
+    b.setAttribute('aria-label', b.title);
     b.setAttribute('aria-pressed', n === state.r);
   }
   for (const b of copyChips.children) b.setAttribute('aria-pressed', +b.dataset.n === state.copies);
   for (const b of swatches.children) b.setAttribute('aria-pressed', b.dataset.color.toLowerCase() === state.color.toLowerCase());
   $('customColor').value = state.color;
+  const zone = holeZone(state.hole);
   $('hole').value = Math.round(state.hole * 100);
-  $('holeOut').textContent = Math.round(state.hole * 100) + '% out';
-  $('tooth').max = state.R - 1; $('tooth').value = state.tooth;
-  $('toothOut').textContent = state.tooth + ' / ' + state.R;
+  $('holeOut').textContent = HOLE_ZONES[zone] + ' · ' + Math.round(state.hole * 100) + '%';
+  [...$('holeScale').children].forEach((s, i) => s.classList.toggle('on', i === zone));
+
+  const g = gcd(state.R, state.r);
+  $('tooth').max = state.R - 0.5; $('tooth').value = state.tooth;
+  const tTxt = Number.isInteger(state.tooth) ? state.tooth : state.tooth.toFixed(1);
+  $('toothOut').textContent = `${tTxt}/${state.R} · ${Math.round(state.tooth / state.R * 360)}°`;
+  const ticks = $('toothTicks');
+  ticks.innerHTML = '';
+  if (2 * state.R / g <= 24) {
+    const prev = lastMatch();
+    const base = prev ? prev.alpha * state.R / (2 * Math.PI) : 0;
+    for (let k = 0; k < 2 * state.R / g; k++) {
+      const v = ((base + k * g / 2) % state.R + state.R) % state.R;
+      const o = document.createElement('option'); o.value = Math.round(v * 2) / 2; ticks.appendChild(o);
+    }
+  }
+
   $('width').value = state.width; $('widthOut').textContent = state.width.toFixed(2) + ' px';
+  $('sample').style.background = PAPER[state.paper];
+  $('sampleLine').style.background = state.color;
+  $('sampleLine').style.height = Math.max(0.6, state.width * REF * S / dpr) + 'px';
+  const sw = suggestWidth(state.R, state.r);
+  $('widthHint').textContent = `Suggested for this ${state.R / g}-point pattern: ${sw} px`;
+  $('widthUse').hidden = sw === state.width;
   $('speed').value = state.speed; $('speedOut').textContent = state.speed + ' / 10';
   $('showGears').checked = state.showGears;
   $('showPreview').checked = state.preview;
@@ -695,6 +751,56 @@ function updateReadout() {
   const pct = cur ? Math.floor(100 * cur.t / cur.T) + '%' : 'ready';
   const more = queue.length ? ` · <b>${queue.length}</b> more` : '';
   $('statProgress').innerHTML = `layer <b>${layers.length + (cur ? 0 : 1)}</b> · <b>${pct}</b>${more}`;
+  const T = cur ? cur.T : 2 * Math.PI * state.r / g;
+  const time = cur
+    ? `About ${fmtTime((cur.T - cur.t) / speedRad())} left at speed ${state.speed}.`
+    : `This pattern takes about ${fmtTime(T / speedRad())} at speed ${state.speed}.`;
+  if ($('timeHint').textContent !== time) $('timeHint').textContent = time;
+}
+
+// ---------- what the numbers mean ----------
+const HOLE_ZONES = ['Gentle waves', 'Rounded petals', 'Sharp points'];
+const holeZone = h => h < 0.4 ? 0 : h < 0.75 ? 1 : 2;
+function rating(R, r) {
+  const g = gcd(R, r), points = R / g, trips = r / g;
+  const kind = points <= 4 ? 'simple' : (points > 30 || trips > 14) ? 'dense' : points <= 24 ? 'good' : 'busy';
+  return { points, trips, kind };
+}
+function suggestWidth(R, r) {
+  const { points, trips } = rating(R, r);
+  const busy = Math.max(points, trips * 2.5);
+  return busy <= 8 ? 2.5 : busy <= 16 ? 1.75 : busy <= 30 ? 1.25 : busy <= 50 ? 1 : 0.75;
+}
+function fmtTime(sec) {
+  const s = Math.max(1, Math.round(sec));
+  return s < 60 ? s + ' s' : Math.floor(s / 60) + ' min' + (s % 60 ? ' ' + (s % 60) + ' s' : '');
+}
+// the most recent layer with the same gears, if any
+function lastMatch() {
+  for (let i = layers.length - 1; i >= 0; i--) {
+    const L = layers[i];
+    if (L !== cur && L.mode === state.mode && L.R === state.R && L.r === state.r) return L;
+  }
+  return null;
+}
+let thumbKey = '';
+function drawThumbs() {
+  const fg = getComputedStyle(wheelChips).color;
+  const key = [state.mode, state.R, state.hole, fg, dpr, wheelChips.clientWidth].join('|');
+  if (key === thumbKey) return;
+  thumbKey = key;
+  for (const b of wheelChips.children) {
+    const cv = b.querySelector('canvas');
+    const px = Math.round((cv.clientWidth || 48) * dpr);
+    cv.width = cv.height = px;
+    const ctx = cv.getContext('2d');
+    const r = +b.dataset.n;
+    const L = makeLayer({ ...state, r, tooth: 0 });
+    const ext = (L.mode === 'in' ? L.R - r : L.R + r) + L.hole * r;
+    const s = px / 2 * 0.94 / ext;
+    const lw = (rating(state.R, r).kind === 'dense' ? 0.45 : 0.9) * dpr;
+    paintRange(ctx, L, 0, L.T, fg, lw / (REF * s), s, px / 2, 0);
+  }
 }
 
 document.querySelectorAll('#modeSeg button').forEach(b => b.addEventListener('click', () => {
@@ -726,6 +832,18 @@ $('clearBtn').addEventListener('click', () => {
   running = false; cur = null; queue = []; layers = []; redrawPaper(); syncUI();
 });
 $('rosetteBtn').addEventListener('click', () => { drawRosette(); syncUI(); });
+$('fitBtn').addEventListener('click', () => {
+  const g = gcd(state.R, state.r);
+  const prev = lastMatch();
+  const base = prev ? prev.alpha * state.R / (2 * Math.PI) : state.tooth;
+  const t = ((base + g / 2) % state.R + state.R) % state.R;
+  state.tooth = Math.round(t * 2) / 2;
+  liftWheel(); syncUI();
+  toast(prev ? 'Next layer sits between the points of the last one' : 'Turned half a point');
+});
+$('widthUse').addEventListener('click', () => {
+  state.width = suggestWidth(state.R, state.r); penChanged(); syncUI();
+});
 $('pngBtn').addEventListener('click', savePNG);
 $('svgBtn').addEventListener('click', saveSVG);
 $('shareBtn').addEventListener('click', share);
