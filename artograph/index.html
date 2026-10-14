@@ -9,7 +9,7 @@
 <title>Artograph</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Monoton&family=Cinzel:wght@600&family=IM+Fell+English&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Monoton&family=IM+Fell+English&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
 /* Layout: square sheet of paper on the left, a toolbox of gears, pens and motion controls on the right; stacks on phones. */
 :root{
@@ -18,7 +18,7 @@
   --display:'Monoton','Impact',system-ui,sans-serif;
   --body:'Instrument Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
   --mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
-  --numeral:'Cinzel',Georgia,serif; --step:'IM Fell English',Georgia,serif; --gold:#a9791f;
+  --numeral:'Monoton','Impact',system-ui,sans-serif; --step:'IM Fell English',Georgia,serif; --gold:#a9791f;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0e1017; --panel:#161922; --fg:#e6e8f1; --muted:#959bb0; --line:#292e3c; --chip:#1e222e;
@@ -45,7 +45,7 @@ h1{font-family:var(--display);font-weight:400;font-size:clamp(30px,5vw,46px);let
 .order-note{margin:0 0 6px;font-size:13px;color:var(--muted);font-style:italic}
 .step{display:grid;grid-template-columns:46px minmax(0,1fr);column-gap:10px;row-gap:10px;padding-block:16px;border-top:1px solid var(--line)}
 .order-note+.step{border-top:0}
-.step-num{grid-row:1/span 2;font-family:var(--numeral);font-weight:600;font-size:34px;line-height:.85;color:var(--gold);text-align:center;font-variant-numeric:lining-nums}
+.step-num{grid-row:1/span 2;font-family:var(--numeral);font-weight:400;font-size:36px;line-height:.8;color:var(--gold);text-align:center;font-variant-numeric:lining-nums}
 .step h2{font-family:var(--step);font-weight:400;font-size:20px;line-height:1.15;margin:0;color:var(--fg);text-wrap:balance}
 .step-body{grid-column:2;display:flex;flex-direction:column;gap:8px;min-width:0}
 .panel>.hint{padding-top:12px;border-top:1px solid var(--line)}
